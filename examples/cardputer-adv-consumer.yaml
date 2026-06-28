@@ -23,15 +23,17 @@ tca8418_keypad:
   rows: 4
   columns: 14
   address: 0x34
-  update_interval: 10ms
   keymap:
     54: ","
     55: "."
     56: "/"
-  on_key_press:
+  on_key:
     - then:
         - lambda: |-
             // Example character-based routing when using keymap-only mode.
+            if (!pressed) {
+              return;
+            }
             if (key_char == ',') {
               ESP_LOGI("consumer", "Volume down action");
             } else if (key_char == '.') {

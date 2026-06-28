@@ -21,16 +21,16 @@ tca8418_keypad:
   columns: 10
   address: 0x34
   keymap:
-    1: "K1"
-    2: "K2"
-    3: "K3"
-    4: "K4"
-    5: "K5"
-    6: "K6"
-    7: "K7"
-    8: "K8"
-    9: "K9"
-    10: "K10"
-  on_key_press:
+    1: "1"
+    2: "2"
+    3: "3"
+    4: "4"
+    5: "5"
+    6: "6"
+    7: "7"
+    8: "8"
+    9: "9"
+    10: "0"
+  on_key:
     - then:
-        - logger.log: "press"
+        - logger.log: "event"

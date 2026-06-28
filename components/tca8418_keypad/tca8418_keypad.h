@@ -14,7 +14,7 @@ namespace tca8418_keypad {
 class TCA8418KeyEventTrigger
   : public Trigger<uint8_t, uint8_t, bool, uint8_t, uint8_t, bool> {};
 
-class TCA8418Keypad : public PollingComponent, public i2c::I2CDevice {
+class TCA8418Keypad : public Component, public i2c::I2CDevice {
  public:
   void set_dimensions(uint8_t rows, uint8_t columns) {
     this->rows_ = rows;
@@ -43,17 +43,20 @@ class TCA8418Keypad : public PollingComponent, public i2c::I2CDevice {
   }
 
   void setup() override;
-  void update() override;
+  void loop() override;
   void dump_config() override;
 
  protected:
   bool configure_keypad_();
+  void process_events_();
   void handle_event_(uint8_t event);
   char lookup_key_(uint8_t keycode, uint8_t row, uint8_t col) const;
+  static void IRAM_ATTR gpio_intr_(TCA8418Keypad *self);
 
   uint8_t rows_{0};
   uint8_t columns_{0};
   InternalGPIOPin *interrupt_pin_{nullptr};
+  volatile bool interrupt_pending_{false};
   uint32_t debounce_ms_{0};
   uint32_t long_press_ms_{0};
   std::vector<char> keymap_by_code_;

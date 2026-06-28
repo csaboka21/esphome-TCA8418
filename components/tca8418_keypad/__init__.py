@@ -12,8 +12,6 @@ CONF_KEYMAP = "keymap"
 CONF_INTERRUPT_PIN = "interrupt_pin"
 CONF_DEBOUNCE_MS = "debounce_ms"
 CONF_LONG_PRESS_MS = "long_press_ms"
-CONF_ON_KEY_PRESS = "on_key_press"
-CONF_ON_KEY_RELEASE = "on_key_release"
 CONF_ON_KEY = "on_key"
 CONF_TRIGGER_ID = "trigger_id"
 CONF_ID = "id"
@@ -21,19 +19,11 @@ CONF_ID = "id"
 
 tca8418_keypad_ns = cg.esphome_ns.namespace("tca8418_keypad")
 TCA8418Keypad = tca8418_keypad_ns.class_(
-    "TCA8418Keypad", cg.PollingComponent, i2c.I2CDevice
+    "TCA8418Keypad", cg.Component, i2c.I2CDevice
 )
 TCA8418KeyEventTrigger = tca8418_keypad_ns.class_(
     "TCA8418KeyEventTrigger",
     automation.Trigger.template(cg.uint8, cg.uint8, cg.bool_, cg.uint8, cg.uint8, cg.bool_),
-)
-TCA8418KeyPressTrigger = tca8418_keypad_ns.class_(
-    "TCA8418KeyPressTrigger",
-    automation.Trigger.template(cg.uint8, cg.uint8, cg.uint8, cg.uint8),
-)
-TCA8418KeyReleaseTrigger = tca8418_keypad_ns.class_(
-    "TCA8418KeyReleaseTrigger",
-    automation.Trigger.template(cg.uint8, cg.uint8, cg.uint8, cg.uint8, cg.bool_),
 )
 
 
@@ -71,19 +61,9 @@ CONFIG_SCHEMA = cv.All(
                     cv.GenerateID(CONF_TRIGGER_ID): cv.declare_id(TCA8418KeyEventTrigger),
                 }
             ),
-            cv.Optional(CONF_ON_KEY_PRESS): automation.validate_automation(
-                {
-                    cv.GenerateID(CONF_TRIGGER_ID): cv.declare_id(TCA8418KeyPressTrigger),
-                }
-            ),
-            cv.Optional(CONF_ON_KEY_RELEASE): automation.validate_automation(
-                {
-                    cv.GenerateID(CONF_TRIGGER_ID): cv.declare_id(TCA8418KeyReleaseTrigger),
-                }
-            ),
         }
     )
-    .extend(cv.polling_component_schema("10ms"))
+    .extend(cv.COMPONENT_SCHEMA)
     .extend(i2c.i2c_device_schema(0x34)),
     _validate_keymap,
 )
@@ -117,35 +97,6 @@ async def to_code(config):
                 (cg.uint8, "row"),
                 (cg.uint8, "col"),
                 (cg.bool_, "pressed"),
-                (cg.uint8, "key_char"),
-                (cg.uint8, "keycode"),
-                (cg.bool_, "long_press"),
-            ],
-            conf,
-        )
-
-    for conf in config.get(CONF_ON_KEY_PRESS, []):
-        trigger = cg.new_Pvariable(conf[CONF_TRIGGER_ID])
-        cg.add(var.add_on_key_press_trigger(trigger))
-        await automation.build_automation(
-            trigger,
-            [
-                (cg.uint8, "row"),
-                (cg.uint8, "col"),
-                (cg.uint8, "key_char"),
-                (cg.uint8, "keycode"),
-            ],
-            conf,
-        )
-
-    for conf in config.get(CONF_ON_KEY_RELEASE, []):
-        trigger = cg.new_Pvariable(conf[CONF_TRIGGER_ID])
-        cg.add(var.add_on_key_release_trigger(trigger))
-        await automation.build_automation(
-            trigger,
-            [
-                (cg.uint8, "row"),
-                (cg.uint8, "col"),
                 (cg.uint8, "key_char"),
                 (cg.uint8, "keycode"),
                 (cg.bool_, "long_press"),

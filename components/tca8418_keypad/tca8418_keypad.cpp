@@ -21,7 +21,8 @@ static const uint8_t REG_KP_GPIO3 = 0x1F;
 void TCA8418Keypad::setup() {
   if (this->interrupt_pin_ != nullptr) {
     this->interrupt_pin_->setup();
-    this->interrupt_pin_->pin_mode(gpio::FLAG_INPUT);
+    this->interrupt_pin_->pin_mode(gpio::FLAG_INPUT | gpio::FLAG_PULLUP);
+    this->disable_loop();
   }
 
   const size_t key_slots = static_cast<size_t>(this->rows_) * this->columns_;
@@ -34,12 +35,37 @@ void TCA8418Keypad::setup() {
     this->mark_failed();
     return;
   }
+
+  if (this->interrupt_pin_ != nullptr) {
+    this->interrupt_pin_->attach_interrupt(&TCA8418Keypad::gpio_intr_, this, gpio::INTERRUPT_FALLING_EDGE);
+    // INT is active-low/open-drain; if already low, no falling edge will occur.
+    if (!this->interrupt_pin_->digital_read()) {
+      this->interrupt_pending_ = true;
+      this->enable_loop();
+    }
+    ESP_LOGI(TAG, "Interrupt enabled on pin %d", this->interrupt_pin_->get_pin());
+  }
 }
 
-void TCA8418Keypad::update() {
-  if (this->interrupt_pin_ != nullptr && this->interrupt_pin_->digital_read()) {
+void TCA8418Keypad::loop() {
+  if (this->interrupt_pin_ != nullptr) {
+    if (!this->interrupt_pending_) {
+      return;
+    }
+    ESP_LOGI(TAG, "Interrupt on pin %d", this->interrupt_pin_->get_pin());
+    this->process_events_();
+    if (!this->interrupt_pending_) {
+      this->disable_loop();
+    }
     return;
   }
+  // Polling mode: check for queued events each loop iteration.
+  this->process_events_();
+}
+
+
+void TCA8418Keypad::process_events_() {
+  this->interrupt_pending_ = false;
 
   uint8_t int_stat = 0;
   if (!this->read_byte(REG_INT_STAT, &int_stat)) {
@@ -83,10 +109,16 @@ void TCA8418Keypad::update() {
   }
 }
 
+void IRAM_ATTR TCA8418Keypad::gpio_intr_(TCA8418Keypad *self) {
+  self->interrupt_pending_ = true;
+  if (self->interrupt_pin_ != nullptr) {
+    self->enable_loop_soon_any_context();
+  }
+}
+
 void TCA8418Keypad::dump_config() {
   ESP_LOGCONFIG(TAG, "TCA8418 Keypad:");
   LOG_I2C_DEVICE(this);
-  LOG_UPDATE_INTERVAL(this);
   ESP_LOGCONFIG(TAG, "  Rows: %u", this->rows_);
   ESP_LOGCONFIG(TAG, "  Columns: %u", this->columns_);
   if (this->interrupt_pin_ != nullptr) {

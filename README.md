@@ -9,7 +9,7 @@ This repository contains an ESPHome external component for the TI TCA8418 keypad
 - Optional character keymap translation per matrix position
 - Optional IRQ-based event handling with interrupt_pin
 - Optional debounce and long-press detection
-- Multiple automation hooks: on_key, on_key_press, on_key_release
+- Single automation hook: on_key (press and release events)
 
 ## Folder Layout
 
@@ -48,7 +48,6 @@ tca8418_keypad:
   rows: 4
   columns: 14
   address: 0x34
-  update_interval: 10ms
   debounce_ms: 12ms
   long_press_ms: 500ms
   # interrupt_pin: GPIO10
@@ -84,11 +83,9 @@ tca8418_keypad:
 - keycode: raw TCA8418 event code (1..80).
 - long_press: true when a release event exceeded long_press_ms.
 
-## Trigger Types
+## Trigger Type
 
 - on_key: fires on both press and release with full event payload.
-- on_key_press: fires only for press events.
-- on_key_release: fires only for release events.
 
 ## Troubleshooting
 

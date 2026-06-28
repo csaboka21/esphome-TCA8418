@@ -34,7 +34,6 @@ tca8418_keypad:
   rows: 7
   columns: 8
   address: 0x34
-  update_interval: 10ms
   debounce_ms: 12ms
   long_press_ms: 500ms
   # RetroBreeze reference: INT is GPIO11 (active-low)

@@ -32,7 +32,6 @@ tca8418_keypad:
   rows: 4
   columns: 14
   address: 0x34
-  update_interval: 10ms
   debounce_ms: 12ms
   long_press_ms: 500ms
   # Connect TCA8418 INT (active low) to this GPIO.

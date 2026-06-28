@@ -32,7 +32,6 @@ tca8418_keypad:
   rows: 4
   columns: 14
   address: 0x34
-  update_interval: 10ms
   debounce_ms: 12ms
   long_press_ms: 500ms
   # Optional IRQ line from TCA8418 INT pin (active low).
@@ -119,13 +118,8 @@ tca8418_keypad:
               keycode,
               long_press ? "true" : "false"
             );
-  on_key_press:
-    - then:
-        - lambda: |-
-            ESP_LOGD("kbd", "press key=%c", key_char ? static_cast<char>(key_char) : 0x00);
-  on_key_release:
-    - then:
-        - lambda: |-
-            if (long_press) {
+            if (pressed) {
+              ESP_LOGD("kbd", "press key=%c", key_char ? static_cast<char>(key_char) : 0x00);
+            } else if (long_press) {
               ESP_LOGI("kbd", "long release key=%c", key_char ? static_cast<char>(key_char) : 0x00);
             }
