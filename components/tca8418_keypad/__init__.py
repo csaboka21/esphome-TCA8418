@@ -10,8 +10,8 @@ CONF_ROWS = "rows"
 CONF_COLUMNS = "columns"
 CONF_KEYMAP = "keymap"
 CONF_INTERRUPT_PIN = "interrupt_pin"
-CONF_DEBOUNCE_MS = "debounce_ms"
-CONF_LONG_PRESS_MS = "long_press_ms"
+CONF_DEBOUNCE = "debounce"
+CONF_LONG_PRESS = "long_press"
 CONF_ON_KEY = "on_key"
 CONF_TRIGGER_ID = "trigger_id"
 CONF_ID = "id"
@@ -54,8 +54,8 @@ CONFIG_SCHEMA = cv.All(
                 {cv.int_range(min=1, max=80): cv.string_strict}
             ),
             cv.Optional(CONF_INTERRUPT_PIN): pins.gpio_input_pin_schema,
-            cv.Optional(CONF_DEBOUNCE_MS, default="0ms"): cv.positive_time_period_milliseconds,
-            cv.Optional(CONF_LONG_PRESS_MS, default="0ms"): cv.positive_time_period_milliseconds,
+            cv.Optional(CONF_DEBOUNCE, default="12ms"): cv.positive_time_period_milliseconds,
+            cv.Optional(CONF_LONG_PRESS, default="500ms"): cv.positive_time_period_milliseconds,
             cv.Optional(CONF_ON_KEY): automation.validate_automation(
                 {
                     cv.GenerateID(CONF_TRIGGER_ID): cv.declare_id(TCA8418KeyEventTrigger),
@@ -75,8 +75,8 @@ async def to_code(config):
     await i2c.register_i2c_device(var, config)
 
     cg.add(var.set_dimensions(config[CONF_ROWS], config[CONF_COLUMNS]))
-    cg.add(var.set_debounce_ms(config[CONF_DEBOUNCE_MS].total_milliseconds))
-    cg.add(var.set_long_press_ms(config[CONF_LONG_PRESS_MS].total_milliseconds))
+    cg.add(var.set_debounce_ms(config[CONF_DEBOUNCE].total_milliseconds))
+    cg.add(var.set_long_press_ms(config[CONF_LONG_PRESS].total_milliseconds))
 
     if CONF_INTERRUPT_PIN in config:
         interrupt_pin = await cg.gpio_pin_expression(config[CONF_INTERRUPT_PIN])
