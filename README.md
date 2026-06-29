@@ -90,6 +90,7 @@ tca8418_keypad:
 ## Notes
 
 - This project was created with the help of AI.
+- Tested with M5Stack Cardputer Adv.
 - The component can run in polling mode or interrupt mode.
 - In interrupt mode, the loop only wakes when INT is asserted.
 - Out-of-range key events are ignored and logged.
