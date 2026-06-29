@@ -52,7 +52,6 @@ void TCA8418Keypad::loop() {
     if (!this->interrupt_pending_) {
       return;
     }
-    ESP_LOGI(TAG, "Interrupt on pin %d", this->interrupt_pin_->get_pin());
     this->process_events_();
     if (!this->interrupt_pending_) {
       this->disable_loop();
