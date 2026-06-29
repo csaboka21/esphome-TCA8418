@@ -83,9 +83,13 @@ tca8418_keypad:
 - keycode: raw TCA8418 event code (1..80).
 - long_press: true when a release event exceeded long_press_ms.
 
-## Trigger Type
+## Notes
 
-- on_key: fires on both press and release with full event payload.
+- This project was created with the help of AI.
+- Tested with M5Stack Cardputer Adv.
+- The component can run in polling mode or interrupt mode.
+- In interrupt mode, the loop only wakes when INT is asserted.
+- Out-of-range key events are ignored and logged.
 
 ## Troubleshooting
 
