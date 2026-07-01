@@ -216,6 +216,16 @@ void TCA8418Keypad::handle_event_(uint8_t event) {
            pressed ? "true" : "false", key_char, keycode,
            long_press ? "true" : "false");
 
+  for (TCA8418KeypadListener *listener : this->listeners_) {
+    if (pressed) {
+      listener->button_pressed(row, col);
+      listener->keycode_pressed(keycode);
+    } else {
+      listener->button_released(row, col);
+      listener->keycode_released(keycode);
+    }
+  }
+
   for (TCA8418KeyEventTrigger *trigger : this->key_event_triggers_) {
     trigger->trigger(row, col, pressed, key_char, keycode, long_press);
   }

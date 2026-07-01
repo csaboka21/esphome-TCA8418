@@ -10,6 +10,8 @@ This repository contains an ESPHome external component for the TI TCA8418 keypad
 - Optional IRQ-based event handling with interrupt_pin
 - Optional debounce and long-press detection
 - Single automation hook: on_key (press and release events)
+- Optional binary sensor entities per key (by keycode or row/col)
+- LVGL keypad integration through mapped binary sensors
 
 ## Folder Layout
 
@@ -28,6 +30,17 @@ This repository contains an ESPHome external component for the TI TCA8418 keypad
 - interrupt_pin (optional): GPIO input connected to TCA8418 INT pin (active low). When set, polling checks are skipped until IRQ is asserted.
 - debounce_ms (optional, default 0ms): Ignore repeated events for the same key within this window.
 - long_press_ms (optional, default 0ms): Marks release event as long_press when key hold duration exceeds this threshold.
+
+## Binary Sensor Platform
+
+You can expose individual key states as `binary_sensor` entities.
+
+- platform: `tca8418_keypad`
+- keypad_id (required): ID of your keypad component.
+- keycode (optional): Raw TCA8418 keycode (1..80).
+- row and col (optional): Matrix position (row 0..7, col 0..13).
+
+Provide either `keycode`, or `row` + `col`.
 
 ## Example ESPHome YAML
 
@@ -74,6 +87,28 @@ tca8418_keypad:
               long_press ? "true" : "false"
             );
 
+binary_sensor:
+  - platform: tca8418_keypad
+    keypad_id: kb
+    id: kb_up
+    keycode: 12
+
+  - platform: tca8418_keypad
+    keypad_id: kb
+    id: kb_down
+    keycode: 22
+
+  - platform: tca8418_keypad
+    keypad_id: kb
+    id: kb_enter
+    keycode: 32
+
+lvgl:
+  keypads:
+    - up: kb_up
+      down: kb_down
+      enter: kb_enter
+
 ## Callback Variables
 
 - row: matrix row index.
@@ -86,6 +121,12 @@ tca8418_keypad:
 ## Trigger Type
 
 - on_key: fires on both press and release with full event payload.
+
+## LVGL Integration Notes
+
+- LVGL `keypads` consumes binary sensor IDs.
+- Map your physical keys to logical LVGL keys (for example `up`, `down`, `left`, `right`, `enter`, `esc`).
+- For 3-button UIs, consider LVGL `encoders` mode with `left_button`, `right_button`, and `enter_button`.
 
 ## Troubleshooting
 
