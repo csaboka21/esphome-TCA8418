@@ -10,6 +10,8 @@ External ESPHome component for the TI TCA8418 keypad controller.
 - Optional keycode-to-character mapping.
 - Optional interrupt-driven mode via INT pin.
 - Optional debounce and long-press detection.
+- Optional binary sensor entities per key, by raw keycode or row/column position.
+- LVGL keypad integration through mapped binary sensors.
 
 ## Repository layout
 
@@ -30,10 +32,22 @@ External ESPHome component for the TI TCA8418 keypad controller.
 - interrupt_pin: GPIO input connected to TCA8418 INT (active low).
 - debounce: ignore repeated key events in this window (default 12ms).
 - long_press: sets long_press=true on release when held long enough (default 500ms).
+- debounce_ms / long_press_ms: deprecated aliases still accepted for compatibility.
 - keymap: map TCA8418 keycode to one character.
   - Key range: 1..80.
   - Value: single character string, or empty string to clear.
   - Example: 21: "F"
+
+## Binary sensor platform
+
+You can expose individual key states as `binary_sensor` entities.
+
+- platform: `tca8418_keypad`
+- keypad_id (required): ID of your keypad component.
+- keycode (optional): Raw TCA8418 keycode (1..80).
+- row and col (optional): Matrix position (row 0..7, col 0..13).
+
+Provide either `keycode`, or `row` + `col`.
 
 ## ESPHome example
 
@@ -75,8 +89,29 @@ tca8418_keypad:
               keycode,
               long_press ? "true" : "false"
             );
-```
 
+binary_sensor:
+  - platform: tca8418_keypad
+    keypad_id: keypad
+    id: kb_up
+    keycode: 12
+
+  - platform: tca8418_keypad
+    keypad_id: keypad
+    id: kb_down
+    keycode: 22
+
+  - platform: tca8418_keypad
+    keypad_id: keypad
+    id: kb_enter
+    keycode: 32
+
+lvgl:
+  keypads:
+    - up: kb_up
+      down: kb_down
+      enter: kb_enter
+```
 
 ## on_key trigger variables
 
@@ -95,6 +130,12 @@ tca8418_keypad:
 - In interrupt mode, the loop only wakes when INT is asserted.
 - Out-of-range key events are ignored and logged.
 
+## LVGL Integration Notes
+
+- LVGL `keypads` consumes binary sensor IDs.
+- Map your physical keys to logical LVGL keys (for example `up`, `down`, `left`, `right`, `enter`, `esc`).
+- For 3-button UIs, consider LVGL `encoders` mode with `left_button`, `right_button`, and `enter_button`.
+
 ## Troubleshooting
 
 - No key events:
@@ -103,5 +144,8 @@ tca8418_keypad:
   - If using interrupt_pin, check INT wiring and pull-up behavior.
 - Unexpected row/column values:
   - Verify rows and columns match your physical matrix wiring.
+  - Verify keymap keys are valid TCA8418 keycodes (1..80).
 - Repeated or noisy events:
   - Increase debounce.
+  - Confirm matrix diode/wiring characteristics.
+  - Prefer interrupt_pin mode for cleaner event timing.

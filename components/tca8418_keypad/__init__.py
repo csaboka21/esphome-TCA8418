@@ -12,6 +12,8 @@ CONF_KEYMAP = "keymap"
 CONF_INTERRUPT_PIN = "interrupt_pin"
 CONF_DEBOUNCE = "debounce"
 CONF_LONG_PRESS = "long_press"
+CONF_DEBOUNCE_MS = "debounce_ms"
+CONF_LONG_PRESS_MS = "long_press_ms"
 CONF_ON_KEY = "on_key"
 CONF_TRIGGER_ID = "trigger_id"
 CONF_ID = "id"
@@ -44,6 +46,14 @@ def _validate_keymap(config):
     return config
 
 
+def _resolve_deprecated_options(config):
+    if CONF_DEBOUNCE not in config and CONF_DEBOUNCE_MS in config:
+        config[CONF_DEBOUNCE] = config[CONF_DEBOUNCE_MS]
+    if CONF_LONG_PRESS not in config and CONF_LONG_PRESS_MS in config:
+        config[CONF_LONG_PRESS] = config[CONF_LONG_PRESS_MS]
+    return config
+
+
 CONFIG_SCHEMA = cv.All(
     cv.Schema(
         {
@@ -56,6 +66,8 @@ CONFIG_SCHEMA = cv.All(
             cv.Optional(CONF_INTERRUPT_PIN): pins.gpio_input_pin_schema,
             cv.Optional(CONF_DEBOUNCE, default="12ms"): cv.positive_time_period_milliseconds,
             cv.Optional(CONF_LONG_PRESS, default="500ms"): cv.positive_time_period_milliseconds,
+            cv.Optional(CONF_DEBOUNCE_MS): cv.positive_time_period_milliseconds,
+            cv.Optional(CONF_LONG_PRESS_MS): cv.positive_time_period_milliseconds,
             cv.Optional(CONF_ON_KEY): automation.validate_automation(
                 {
                     cv.GenerateID(CONF_TRIGGER_ID): cv.declare_id(TCA8418KeyEventTrigger),
@@ -66,6 +78,7 @@ CONFIG_SCHEMA = cv.All(
     .extend(cv.COMPONENT_SCHEMA)
     .extend(i2c.i2c_device_schema(0x34)),
     _validate_keymap,
+    _resolve_deprecated_options,
 )
 
 

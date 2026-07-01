@@ -11,6 +11,14 @@
 namespace esphome {
 namespace tca8418_keypad {
 
+class TCA8418KeypadListener {
+ public:
+  virtual void button_pressed(uint8_t row, uint8_t col) {}
+  virtual void button_released(uint8_t row, uint8_t col) {}
+  virtual void keycode_pressed(uint8_t keycode) {}
+  virtual void keycode_released(uint8_t keycode) {}
+};
+
 class TCA8418KeyEventTrigger
   : public Trigger<uint8_t, uint8_t, bool, uint8_t, uint8_t, bool> {};
 
@@ -42,6 +50,8 @@ class TCA8418Keypad : public Component, public i2c::I2CDevice {
     this->key_event_triggers_.push_back(trigger);
   }
 
+  void register_listener(TCA8418KeypadListener *listener) { this->listeners_.push_back(listener); }
+
   void setup() override;
   void loop() override;
   void dump_config() override;
@@ -60,6 +70,7 @@ class TCA8418Keypad : public Component, public i2c::I2CDevice {
   uint32_t debounce_ms_{0};
   uint32_t long_press_ms_{0};
   std::vector<char> keymap_by_code_;
+  std::vector<TCA8418KeypadListener *> listeners_;
   std::vector<TCA8418KeyEventTrigger *> key_event_triggers_;
   std::vector<bool> key_pressed_state_;
   std::vector<uint32_t> key_last_event_ms_;
