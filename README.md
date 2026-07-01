@@ -1,19 +1,19 @@
-# ESPHome TCA8418 Keypad Component
+# ESPHome TCA8418 Keypad
 
-This repository contains an ESPHome external component for the TI TCA8418 keypad controller.
+External ESPHome component for the TI TCA8418 keypad controller.
 
-## Features
+## What this component does
 
-- Configurable matrix size up to 8 rows x 14 columns
-- Reads key press and key release events from the hardware event FIFO
-- Optional character keymap translation per matrix position
-- Optional IRQ-based event handling with interrupt_pin
-- Optional debounce and long-press detection
-- Single automation hook: on_key (press and release events)
-- Optional binary sensor entities per key (by keycode or row/col)
-- LVGL keypad integration through mapped binary sensors
+- Supports keypad matrices from 1x1 up to 8x14.
+- Reads key events from the TCA8418 event FIFO.
+- Emits both press and release events through a single automation trigger.
+- Optional keycode-to-character mapping.
+- Optional interrupt-driven mode via INT pin.
+- Optional debounce and long-press detection.
+- Optional binary sensor entities per key, by raw keycode or row/column position.
+- LVGL keypad integration through mapped binary sensors.
 
-## Folder Layout
+## Repository layout
 
 - components/tca8418_keypad/__init__.py
 - components/tca8418_keypad/tca8418_keypad.h
@@ -21,18 +21,24 @@ This repository contains an ESPHome external component for the TI TCA8418 keypad
 
 ## Configuration
 
-- rows (required): Matrix row count, 1..8.
-- columns (required): Matrix column count, 1..14.
-- keymap (optional): Dictionary that maps TCA8418 keycode (1..80) to a char.
-  - Format: `keycode: "c"`
-  - Value must be a single character or empty string.
-  - Example: `21: "F"`, `11: "\t"`, `1: "`"`
-- interrupt_pin (optional): GPIO input connected to TCA8418 INT pin (active low). When set, polling checks are skipped until IRQ is asserted.
-- debounce (optional, default 12ms): Ignore repeated events for the same key within this window.
-- long_press (optional, default 500ms): Marks release event as long_press when key hold duration exceeds this threshold.
-- debounce_ms / long_press_ms (deprecated aliases): Still accepted for compatibility.
+### Required
 
-## Binary Sensor Platform
+- rows: keypad row count, range 1..8.
+- columns: keypad column count, range 1..14.
+
+### Optional
+
+- address: I2C address (default 0x34).
+- interrupt_pin: GPIO input connected to TCA8418 INT (active low).
+- debounce: ignore repeated key events in this window (default 12ms).
+- long_press: sets long_press=true on release when held long enough (default 500ms).
+- debounce_ms / long_press_ms: deprecated aliases still accepted for compatibility.
+- keymap: map TCA8418 keycode to one character.
+  - Key range: 1..80.
+  - Value: single character string, or empty string to clear.
+  - Example: 21: "F"
+
+## Binary sensor platform
 
 You can expose individual key states as `binary_sensor` entities.
 
@@ -43,14 +49,12 @@ You can expose individual key states as `binary_sensor` entities.
 
 Provide either `keycode`, or `row` + `col`.
 
-## Example ESPHome YAML
+## ESPHome example
 
-Use this component from your node configuration:
-
+```yaml
 external_components:
-  - source:
-      type: local
-      path: ./components
+  - source: github://csaboka21/esphome-TCA8418@main
+    components: [tca8418_keypad]
 
 i2c:
   sda: GPIO8
@@ -58,28 +62,26 @@ i2c:
   scan: true
 
 tca8418_keypad:
-  id: kb
+  id: keypad
   rows: 4
   columns: 14
   address: 0x34
+  # interrupt_pin: GPIO10
   debounce: 12ms
   long_press: 500ms
-  # interrupt_pin: GPIO10
   keymap:
-    1: "`"
-    2: "1"
-    3: "2"
-    4: "3"
-    11: "\t"
-    21: "F"
-    22: "S"
-    31: "C"
+    1: "Q"
+    2: "W"
+    3: "E"
+    11: "A"
+    12: "S"
+    13: "D"
   on_key:
     - then:
         - lambda: |-
             ESP_LOGI(
               "kbd",
-              "row=%u col=%u pressed=%s key=%c raw=%u long=%s",
+              "row=%u col=%u pressed=%s char=%c keycode=%u long=%s",
               row,
               col,
               pressed ? "true" : "false",
@@ -90,17 +92,17 @@ tca8418_keypad:
 
 binary_sensor:
   - platform: tca8418_keypad
-    keypad_id: kb
+    keypad_id: keypad
     id: kb_up
     keycode: 12
 
   - platform: tca8418_keypad
-    keypad_id: kb
+    keypad_id: keypad
     id: kb_down
     keycode: 22
 
   - platform: tca8418_keypad
-    keypad_id: kb
+    keypad_id: keypad
     id: kb_enter
     keycode: 32
 
@@ -109,19 +111,24 @@ lvgl:
     - up: kb_up
       down: kb_down
       enter: kb_enter
+```
 
-## Callback Variables
+## on_key trigger variables
 
-- row: matrix row index.
-- col: matrix column index.
-- pressed: true for key press, false for key release.
-- key_char: mapped char code from keymap, or 0 when unmapped.
-- keycode: raw TCA8418 event code (1..80).
-- long_press: true when a release event exceeded long_press.
+- row: decoded matrix row index.
+- col: decoded matrix column index.
+- pressed: true on press, false on release.
+- key_char: mapped character code, or 0 when unmapped.
+- keycode: raw TCA8418 keycode (1..80).
+- long_press: true only for release events that exceeded configured long_press.
 
-## Trigger Type
+## Notes
 
-- on_key: fires on both press and release with full event payload.
+- This project was created with the help of AI.
+- Tested with M5Stack Cardputer Adv.
+- The component can run in polling mode or interrupt mode.
+- In interrupt mode, the loop only wakes when INT is asserted.
+- Out-of-range key events are ignored and logged.
 
 ## LVGL Integration Notes
 
@@ -132,18 +139,13 @@ lvgl:
 ## Troubleshooting
 
 - No key events:
-  - Verify i2c SDA/SCL pin mapping and address 0x34.
-  - Enable i2c scan and confirm TCA8418 appears.
-  - If using interrupt_pin, ensure it is wired to INT and configured as input.
-- Wrong row/col values:
-  - Check rows and columns match your physical matrix.
+  - Verify I2C wiring and address.
+  - Enable I2C scan and confirm the device is found.
+  - If using interrupt_pin, check INT wiring and pull-up behavior.
+- Unexpected row/column values:
+  - Verify rows and columns match your physical matrix wiring.
   - Verify keymap keys are valid TCA8418 keycodes (1..80).
-- Ghosting or duplicate presses:
+- Repeated or noisy events:
   - Increase debounce.
   - Confirm matrix diode/wiring characteristics.
   - Prefer interrupt_pin mode for cleaner event timing.
-
-## Notes
-
-- For Cardputer Advanced wiring, set i2c SDA/SCL pins to your board pinout.
-- If your matrix uses fewer rows or columns, set rows and columns accordingly.
