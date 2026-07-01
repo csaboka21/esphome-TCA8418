@@ -28,8 +28,9 @@ This repository contains an ESPHome external component for the TI TCA8418 keypad
   - Value must be a single character or empty string.
   - Example: `21: "F"`, `11: "\t"`, `1: "`"`
 - interrupt_pin (optional): GPIO input connected to TCA8418 INT pin (active low). When set, polling checks are skipped until IRQ is asserted.
-- debounce_ms (optional, default 0ms): Ignore repeated events for the same key within this window.
-- long_press_ms (optional, default 0ms): Marks release event as long_press when key hold duration exceeds this threshold.
+- debounce (optional, default 12ms): Ignore repeated events for the same key within this window.
+- long_press (optional, default 500ms): Marks release event as long_press when key hold duration exceeds this threshold.
+- debounce_ms / long_press_ms (deprecated aliases): Still accepted for compatibility.
 
 ## Binary Sensor Platform
 
@@ -61,8 +62,8 @@ tca8418_keypad:
   rows: 4
   columns: 14
   address: 0x34
-  debounce_ms: 12ms
-  long_press_ms: 500ms
+  debounce: 12ms
+  long_press: 500ms
   # interrupt_pin: GPIO10
   keymap:
     1: "`"
@@ -116,7 +117,7 @@ lvgl:
 - pressed: true for key press, false for key release.
 - key_char: mapped char code from keymap, or 0 when unmapped.
 - keycode: raw TCA8418 event code (1..80).
-- long_press: true when a release event exceeded long_press_ms.
+- long_press: true when a release event exceeded long_press.
 
 ## Trigger Type
 
@@ -138,7 +139,7 @@ lvgl:
   - Check rows and columns match your physical matrix.
   - Verify keymap keys are valid TCA8418 keycodes (1..80).
 - Ghosting or duplicate presses:
-  - Increase debounce_ms.
+  - Increase debounce.
   - Confirm matrix diode/wiring characteristics.
   - Prefer interrupt_pin mode for cleaner event timing.
 
